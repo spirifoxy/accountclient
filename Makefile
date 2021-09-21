@@ -7,7 +7,7 @@ test:
 
 cover:
 	@echo "print coverage info to stdout"
-	go test -v ./... -race -coverprofile=coverage.out
+	go test -v ./internal/f3 ./pkg/accounts -race -coverprofile=coverage.out
 	go tool cover -func=coverage.out
 	rm coverage.out
 
