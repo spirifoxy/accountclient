@@ -18,12 +18,17 @@ import (
 // Client is a wrapper around http.Client with optional timeout
 // and rate limiter settings used for accessing accounts API
 type Client struct {
-	httpClient *http.Client
+	httpClient HTTPClient
 	apiURL     *url.URL
 
 	basePath    string
 	rateLimiter *rate.Limiter
 	reqTimeout  time.Duration
+}
+
+// HTTPClient is basic interface over http client
+type HTTPClient interface {
+	Do(req *http.Request) (*http.Response, error)
 }
 
 // Option is function used for applying configurations to client
@@ -142,15 +147,20 @@ func (c *Client) delete(path string, params f3.HTTPParams) (*http.Response, erro
 func parseErrorResponse(body io.ReadCloser, sc int) error {
 	var errorResp *ErrorResponse
 	err := json.NewDecoder(body).Decode(&errorResp)
-	if err != nil {
-		return &RequestStatusError{
-			Code: sc,
-			Err:  fmt.Errorf("not able to parse error info: %w", err),
-		}
+
+	var reqErr error
+	switch {
+	case err == io.EOF:
+		// Empty response body case
+		reqErr = fmt.Errorf("rejected by server")
+	case err != nil:
+		reqErr = fmt.Errorf("not able to parse error info: %w", err)
+	default:
+		reqErr = errors.New(errorResp.Message)
 	}
 
 	return &RequestStatusError{
 		Code: sc,
-		Err:  errors.New(errorResp.Message),
+		Err:  reqErr,
 	}
 }

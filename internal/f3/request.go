@@ -39,10 +39,14 @@ func NewRequest(method, url string, params HTTPParams, body []byte, h Headers) (
 	return req, nil
 }
 
+func timeToRFC1123(t time.Time) string {
+	return t.Format(time.RFC1123)
+}
+
 // DefaultHeaders is a set of headers required for every f3 request.
 func DefaultHeaders() Headers {
 	return map[string]string{
-		"Date":   time.Now().Format(time.RFC1123),
+		"Date":   timeToRFC1123(time.Now()),
 		"Accept": "application/vnd.api+json",
 	}
 }
